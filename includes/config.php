@@ -1,15 +1,17 @@
 <?php
-// Database configuration
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASSWORD', '');
-define('DB_NAME', 'projeto_BDTSS');
+function OpenCon()
+{
+    $dbhost = "localhost";
+    $dbuser = "root";
+    $dbpass = "";
+    $db = "projeto_bdtss";
 
+    $conn = new mysqli($dbhost, $dbuser, $dbpass, $db) 
+    or die("Connect failed: %s\n". $conn->error);
 
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    return $conn;
 }
-?>
+
+$conn = OpenCon();
+
 ?>

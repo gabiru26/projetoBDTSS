@@ -6,22 +6,13 @@
     <title>PHP and MySQL Project</title>
 </head>
 <body>
-    <?php
-    // Include the configuration file
-    require_once('../includes/config.php');
+<?php
 
-    // Your PHP code goes here
+include '../includes/config.php';
 
-    // Example: Connect to the database
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+$conn = OpenCon();
+echo "Connected Successfully";
 
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
-
-    echo "Connected to the database successfully";
-
-    $conn->close();
-    ?>
+?>
 </body>
 </html>
