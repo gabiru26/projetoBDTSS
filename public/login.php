@@ -1,19 +1,39 @@
 <?php
 
+session_start();
+
 include_once '../includes/config.php';
-include '../includes/db_api.php';
+include_once '../includes/db_api.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username']; //obtém o valor do campo "username" enviado através do POST
-    $password_hash = $_POST['password_hash'];
 
-    $user = loginUser($username, $password_hash);
+if (isset($_POST['username']) && isset($_POST['password'])) {
+  
+  $username = mysqli_real_escape_string($conn, $_POST['username']);
+  $password = $_POST['password'];
 
-    if ($user) { //verifica se user não é nulo
-        echo json_encode(['message' => 'Login com sucesso', 'user' => $user]);
-    } else {
-        echo json_encode(['error' => 'Username ou password invalidos.']);
-    }
+  $user = loginUser($username, $password); //devolve a informação do user e valida password
+  if ($user) {
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['role_id_role'] = $user['role_id_role']; // guarda o role id
+    $_SESSION['user_info'] = $user; // guarda a info do user
+
+    $redirect_url = ($user['role_id_role'] === 0) ? 'admin_account.php' : 'user_account.php';
+    header("Location: $redirect_url"); // redireciona baseada no user id
+    exit();
+  } else {
+    // falhou login
+    echo '<p class="error">Invalid username or password.</p>';
+  }
 }
-
 ?>
+
+<form method="post">
+  <label for="username">Username:</label>
+  <input type="text" name="username" id="username">
+  <br>
+  <label for="password">Password:</label>
+  <input type="password" name="password" id="password">
+  <br>
+  <button type="submit">Login</button>
+</form>
+

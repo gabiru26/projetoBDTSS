@@ -2,56 +2,59 @@
 
 include_once 'config.php';
 
-function registerUser($name, $username, $password_hash, $user_code, $date_of_creation, $points, $isAdmin = false) {
-    // recebe vários parâmetros
-    
-    global $conn; //usa uma conexão global com o banco de dados
+function registerUser($name, $username, $password, $user_code, $date_creation, $points, $isAdmin = false) {
+    global $conn;
 
-    
-    $name = mysqli_real_escape_string($conn, $name);
+
+    //parâmetros da função 
+    $name = mysqli_real_escape_string($conn, $name); //é usado em todos os inputs de strings para prevenir sql injections
     $username = mysqli_real_escape_string($conn, $username);
-    $password_hash = mysqli_real_escape_string($conn, $password_hash); 
+    $password_hash = password_hash($password, PASSWORD_DEFAULT); // hashing
     $user_code = mysqli_real_escape_string($conn, $user_code);
     $points = mysqli_real_escape_string($conn, $points);
-    $date_creation = mysqli_real_escape_string($conn, $date_of_creation);
+    $date_creation = mysqli_real_escape_string($conn, $date_creation);
 
     
-    $role_id_role = $isAdmin ? 0 : 1; 
+    $role_id_role = $isAdmin ? 0 : 1;
 
-    
-    $query = "INSERT INTO users (name, username, password_hash, user_code, date_creation, points, role_id_role) 
+    //verifica se user já existe
+    $query_check_username = "SELECT COUNT(*) as count FROM users WHERE username = '$username'"; 
+    $result_check_username = mysqli_query($conn, $query_check_username);
+    $row = mysqli_fetch_assoc($result_check_username);
+    if ($row['count'] > 0) {
+        return false; // user já existe
+    }
+
+    $query = "INSERT INTO users (name, username, password, user_code, date_creation, points, role_id_role)
               VALUES ('$name', '$username', '$password_hash', '$user_code', '$date_creation', $points, $role_id_role)";
-    //executa uma consulta SQL para inserir os dados do usuário
-    
+
     $result = mysqli_query($conn, $query);
 
-
     if ($result) {
-        return true; 
+        return true;
     } else {
-        
         error_log("Error in registerUser: " . mysqli_error($conn));
-        return false; 
+        return false;
     }
 }
 
 
 function generateUserCode($length = 8) {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $code = '';
+    $code = ''; //guardar código gerado
 
-    // Generate a random code
+    // gera código random
     for ($i = 0; $i < $length; $i++) {
         $code .= $characters[rand(0, strlen($characters) - 1)];
     }
 
-    // Check if the generated code already exists in the database
-    // This ensures uniqueness, assuming user codes must be unique
+    
+   
     global $conn;
-    $query = "SELECT user_code FROM users WHERE user_code = '$code'";
+    $query = "SELECT user_code FROM users WHERE user_code = '$code'"; // verifica se código é único
     $result = mysqli_query($conn, $query);
 
-    // If the code already exists, generate a new one
+    // se código já for usado gerar novo em loop
     while (mysqli_num_rows($result) > 0) {
         $code = '';
         for ($i = 0; $i < $length; $i++) {
@@ -64,33 +67,30 @@ function generateUserCode($length = 8) {
 }
 
 
+function loginUser($username, $password) {
+  global $conn;
+
+  $username = mysqli_real_escape_string($conn, $username);
+
+  $query = "SELECT * FROM users WHERE username = '$username'";
+  $result = mysqli_query($conn, $query);
 
 
-function loginUser($username, $password_hash) {
-    global $conn;
+  if ($result && mysqli_num_rows($result) > 0) {
+    $user = mysqli_fetch_assoc($result);
 
-    $username = mysqli_real_escape_string($conn, $username);
-    $password_hash = mysqli_real_escape_string($conn, $password_hash);
-
-    $query = "SELECT * FROM users WHERE username = '$username'";
-    $result = mysqli_query($conn, $query);
-
-    if ($result && mysqli_num_rows($result) > 0) {
-        $user = mysqli_fetch_assoc($result);
-        
-        if (password_verify($password_hash, $user['password_hash'])) {
-            
-            unset($user['password_hash']);
-            return $user;
-        }
+    if (password_verify($password, $user['password'])) {
+      unset($user['password']); 
+      return $user;
     }
-    return false;
-    //executa uma consulta SQL para selecionar o 
-    //usuário correspondente ao nome de usuário fornecido e verifica se a senha fornecida corresponde 
-    //à senha armazenada no banco de dados
+  }
+
+  return false;
+
+  //executa uma consulta SQL para selecionar o 
+  //usuário correspondente ao nome de usuário fornecido e verifica se a senha fornecida corresponde 
+  //à senha armazenada no banco de dados
 }
-
-
 
 
 function fetchGenres() {
@@ -115,6 +115,7 @@ function fetchGenres() {
 
     return $genres;
 }
+
 
 //recebe um id de gênero como parâmetro e procura serviços associados
 function fetchServicesByGenreId($genre_id) {
@@ -155,4 +156,63 @@ function fetchServiceDetails($service_id) {
 }
 
 
+function getUserInfo($username) {
+    global $conn;
+
+    $username = mysqli_real_escape_string($conn, $username);
+
+    $query = "SELECT * FROM users WHERE username = '$username'";
+
+    $result = mysqli_query($conn, $query);
+
+    if ($result && mysqli_num_rows($result) === 1) {
+        return mysqli_fetch_assoc($result);
+    } else {
+        return false;
+    }
+}
+
+
+function updateUserInfo($username, $name, $points) {
+    global $conn;
+
+    $username = mysqli_real_escape_string($conn, $username);
+    $name = mysqli_real_escape_string($conn, $name);
+    $points = mysqli_real_escape_string($conn, $points);
+
+    $query = "UPDATE users SET name = '$name', points = $points WHERE username = '$username'";
+
+    $result = mysqli_query($conn, $query);
+
+    if ($result && mysqli_affected_rows($conn) === 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+function searchUsers($search_term) {
+    global $conn;
+
+    $search_term = mysqli_real_escape_string($conn, $search_term);
+
+    $query = "SELECT * FROM users WHERE name LIKE '%$search_term%' OR username LIKE '%$search_term%' OR user_code LIKE '%$search_term%'";
+
+    $result = mysqli_query($conn, $query);
+
+    if ($result) {
+        $users = array();
+        while ($row = mysqli_fetch_assoc($result)) {
+            $users[] = $row;
+        }
+        return $users;
+    } else {
+        return false;
+    }
+}
+
 ?>
+
+
+
