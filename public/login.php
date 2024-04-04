@@ -7,18 +7,17 @@ include_once '../includes/db_api.php';
 
 
 if (isset($_POST['username']) && isset($_POST['password'])) {
-  
-  $username = mysqli_real_escape_string($conn, $_POST['username']);
+  $username = $_POST['username'];
   $password = $_POST['password'];
 
-  $user = loginUser($username, $password); //devolve a informação do user e valida password
+  $user = loginUser($username, $password); // No need for escaping here
+
   if ($user) {
     $_SESSION['username'] = $user['username'];
-    $_SESSION['role_id_role'] = $user['role_id_role']; // guarda o role id
-    $_SESSION['user_info'] = $user; // guarda a info do user
+    $_SESSION['role'] = $user['role']; // store role directly
 
-    $redirect_url = ($user['role_id_role'] === 0) ? 'admin_account.php' : 'user_account.php';
-    header("Location: $redirect_url"); // redireciona baseada no user id
+    $redirect_url = ($user['role'] === "admin") ? 'admin_account.php' : 'user_account.php';
+    header("Location: $redirect_url"); // redirect based on user role
     exit();
   } else {
     // falhou login
@@ -26,6 +25,7 @@ if (isset($_POST['username']) && isset($_POST['password'])) {
   }
 }
 ?>
+
 
 <form method="post">
   <label for="username">Username:</label>
@@ -36,4 +36,3 @@ if (isset($_POST['username']) && isset($_POST['password'])) {
   <br>
   <button type="submit">Login</button>
 </form>
-
