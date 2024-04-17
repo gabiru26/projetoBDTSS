@@ -82,32 +82,29 @@ function loginUser($username, $password) {
     return false;
   }
   
-  
-  
 
-
-function fetchGenres() {
+  function fetchGenres() {
     global $conn;
-
+  
     $genres = array();
-    //retorna um array de gênero
-
-   
-    $query = "SELECT genre_name, genre_photo FROM genres";
-
-    
+  
+    // Ensure the query retrieves 'id_genre' along with other columns
+    $query = "SELECT id_genres, genre_name, genre_photo FROM genres";
+  
     $result = mysqli_query($conn, $query);
-
-   
+  
     if ($result) {
-       
-        while ($row = mysqli_fetch_assoc($result)) {
-            $genres[] = $row; //cada elemento do array contém o nome do gênero e a foto correspondente
-        }
+      while ($row = mysqli_fetch_assoc($result)) {
+        $genres[] = $row;
+      }
+    } else {
+      echo "Error fetching genres: " . mysqli_error($conn);
     }
-
+  
+    mysqli_free_result($result); // Free the result set (optional but recommended)
     return $genres;
-}
+  }
+ 
 
 
 //recebe um id de gênero como parâmetro e procura serviços associados
