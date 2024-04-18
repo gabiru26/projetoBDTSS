@@ -5,16 +5,15 @@ include_once 'config.php';
 function createUser($name, $username, $password, $user_code, $date_creation, $points, $role = "user") {
     global $conn;
   
-
+    
+    //evitar injeção de SQL
     $name = mysqli_real_escape_string($conn, $name);
     $username = mysqli_real_escape_string($conn, $username);
     $password_hash = password_hash($password, PASSWORD_DEFAULT); 
-  
-  
-  
     $points = mysqli_real_escape_string($conn, $points);
     $date_creation = mysqli_real_escape_string($conn, $date_creation);
   
+    //verifica se o nome de utilizador ja existe no banco de dados
     $query_check_username = "SELECT COUNT(0) as count FROM users WHERE username = '$username'";
     $result_check_username = mysqli_query($conn, $query_check_username);
     $row = mysqli_fetch_assoc($result_check_username);
@@ -22,9 +21,9 @@ function createUser($name, $username, $password, $user_code, $date_creation, $po
       return false; 
     }
   
+    //query SQL para inserir os dados do novo utilizador
     $query = "INSERT INTO users (name, username, password, user_code, date_creation, points, role)
                VALUES ('$name', '$username', '$password_hash', '$user_code', '$date_creation', $points, '$role')";
-  
     $result = mysqli_query($conn, $query);
   
     if ($result) {
@@ -52,9 +51,9 @@ function generateUserCode($length = 8) {
         global $conn;
         $query = "SELECT user_code FROM users WHERE user_code = '$code'";
         $result = mysqli_query($conn, $query);
-    } while (mysqli_num_rows($result) > 0);  // Loop until a unique code is found
+    } while (mysqli_num_rows($result) > 0);  // loop ate codigo unico ser encontrado
 
-    mysqli_free_result($result);  // Free the result set to avoid memory leaks
+    mysqli_free_result($result);  
 
     return $code;
 }
@@ -66,14 +65,16 @@ function loginUser($username, $password) {
   
     $username = mysqli_real_escape_string($conn, $username);
   
+    //selecionar todos os dados do utilizador com o nome fornecido
     $query = "SELECT * FROM users WHERE username = '$username'";
     $result = mysqli_query($conn, $query);
   
+    //verifica se um utilizador com o nome fornecido foi encontrado no banco de dados
     if ($result && mysqli_num_rows($result) > 0) {
       $user = mysqli_fetch_assoc($result);
   
       if (password_verify($password, $user['password'])) {
-        unset($user['password']); // Remove password from returned data
+        unset($user['password']);
         $user['role'] = $user['role'];
         return $user;
       }
@@ -86,13 +87,14 @@ function loginUser($username, $password) {
   function fetchGenres() {
     global $conn;
   
+    //armazena os generos recuperados da db
     $genres = array();
   
-    // Ensure the query retrieves 'id_genre' along with other columns
     $query = "SELECT id_genres, genre_name, genre_photo FROM genres";
   
     $result = mysqli_query($conn, $query);
   
+    //loop while e adiciona cada linha ao array
     if ($result) {
       while ($row = mysqli_fetch_assoc($result)) {
         $genres[] = $row;
@@ -101,7 +103,7 @@ function loginUser($username, $password) {
       echo "Error fetching genres: " . mysqli_error($conn);
     }
   
-    mysqli_free_result($result); // Free the result set (optional but recommended)
+    mysqli_free_result($result);
     return $genres;
   }
  
@@ -113,7 +115,7 @@ function fetchServicesByGenreId($genre_id) {
 
     $services = array();
 
-    $query = "SELECT service_name, service_photo FROM services WHERE genres_id_genres = '$genre_id'";
+    $query = "SELECT id_services, service_name, service_photo FROM services WHERE genres_id_genres = '$genre_id'";
 
     $result = mysqli_query($conn, $query);
 
@@ -157,7 +159,7 @@ function getUserInfo($username) {
   
     if ($result && mysqli_num_rows($result) === 1) {
       $user = mysqli_fetch_assoc($result);
-      $user['role'] = $user['role']; // Assign role explicitly
+      $user['role'] = $user['role']; // atribui role
       return $user;
     } else {
       return false;
@@ -173,11 +175,8 @@ function updateUserInfo($username, $name, $points) {
     $name = mysqli_real_escape_string($conn, $name);
     $points = mysqli_real_escape_string($conn, $points);
 
+    //query sql para atualizar as colunas
     $query = "UPDATE users SET name = '$name', points = $points WHERE username = '$username'";
-
-    if ($role !== null) {
-        $query .= ", role = '$role'"; // Update role if provided
-      }
 
     $result = mysqli_query($conn, $query);
 
@@ -188,7 +187,7 @@ function updateUserInfo($username, $name, $points) {
     }
 }
 
-
+//pesquisar utilizadores na db
 function searchUsers($search_term) {
     global $conn;
 

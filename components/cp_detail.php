@@ -3,22 +3,31 @@
 include_once '../includes/config.php';
 include '../includes/db_api.php';
 
-//// verifica se o id do service está no URL
-if(isset($_GET['service_id'])) {
-   
-    $service_id = mysqli_real_escape_string($conn, $_GET['service_id']);
+if (isset($_GET['service_id'])) {
+  $service_id = $_GET['service_id'];
 
-    $service = fetchServiceDetails($service_id);
+  $service = fetchServiceDetails($service_id);
 
-    //definir o cabeçalho HTTP indicando que a resposta contém conteúdo JSON
-    header('Content-Type: application/json');
-    echo json_encode($service);
+  if ($service) {
+    $serviceName = $service['service_name'];
+    $description = $service['description'];
+    $servicePhoto = $service['service_photo'];
+    $pointsAwarded = $service['points_awarded'];
+    $price = $service['price'];
+
+    $imagePath = "../imgs/dep_laser/dep_laser_" . $service_id . ".jpg";  
+
+    echo "<h2>Service Details</h2>";
+    echo "<h3>$serviceName</h3>";
+    echo "<img src='$imagePath' alt='$serviceName Service Photo'>";
+    echo "<p>$description</p>";
+    echo "<p>Points Awarded: $pointsAwarded</p>";
+    echo "<p>Price: $price</p>";
+  } else {
+    echo "Erro: serviço não encontrado";
+  }
 } else {
-
-    //Se nenhum service_id for fornecido na URL
-    //, o script retorna uma resposta de erro com o código de status HTTP 400
-    header('HTTP/1.1 400 Bad Request');
-    echo json_encode(['error' => 'Service_id not provided']);
+  echo "Erro";
 }
 
 ?>

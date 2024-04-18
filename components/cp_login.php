@@ -5,22 +5,24 @@ session_start();
 include_once '../includes/config.php';
 include_once '../includes/db_api.php';
 
-
+//verifica se os campos foram enviados via POST
 if (isset($_POST['username']) && isset($_POST['password'])) {
+  //valores enviados pelos campos do formulario são atribuidos às variaveis 
   $username = $_POST['username'];
   $password = $_POST['password'];
 
-  $user = loginUser($username, $password); // No need for escaping here
+  $user = loginUser($username, $password);
 
   if ($user) {
+    //armazenados em variaveis de sessão
     $_SESSION['username'] = $user['username'];
-    $_SESSION['role'] = $user['role']; // store role directly
+    $_SESSION['role'] = $user['role'];
 
+    //dependendo do role do utilizador autenticado a url é determinada
     $redirect_url = ($user['role'] === "admin") ? 'cp_admin_account.php' : 'cp_user_account.php';
-    header("Location: $redirect_url"); // redirect based on user role
+    header("Location: $redirect_url");
     exit();
   } else {
-    // falhou login
     echo '<p class="error">Invalid username or password.</p>';
   }
 }

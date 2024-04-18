@@ -10,15 +10,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $username = $_POST['username'];
   $password = $_POST['password_hash'];
 
-  // Call generateUserCode to get a unique code
+  // obter um codigo de utilizador unico
   $user_code = generateUserCode();
 
   $date_creation = date('Y-m-d');
+  //pontos definido como zero
   $points = 0;
-  $role = isset($_POST['role']) ? $_POST['role'] : "user"; // default role is user
+  $role = isset($_POST['role']) ? $_POST['role'] : "user"; // role default
 
   if (createUser($name, $username, $password, $user_code, $date_creation, $points, $role)) {
-    // inserts user data in DB using createUser function
     echo json_encode(['message' => 'Registo efetuado com sucesso']);
   } else {
     echo json_encode(['error' => 'Registo falhou']);
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <input type="text" name="name">
   <input type="text" name="username">
   <input type="password" name="password_hash">
-  <button type="submit">Register</button>
+  <button type="submit">Registo</button>
 </form>
 
 </body>

@@ -12,7 +12,6 @@ include 'includes/config.php';
 
 $conn = OpenCon();
 echo "Connected Successfully";
-
 ?>
 </body>
 </html>
