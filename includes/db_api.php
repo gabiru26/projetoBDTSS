@@ -136,43 +136,42 @@ class User {
       }
   }
 
-  // Add this method to your User class
-public function getUserInfoByCode($user_code) {
-  $user_code = mysqli_real_escape_string($this->conn, $user_code);
+ 
+    public function getUserInfoByCode($user_code) {
+    $user_code = mysqli_real_escape_string($this->conn, $user_code);
 
-  $query = "SELECT * FROM users WHERE user_code = '$user_code'";
+    $query = "SELECT * FROM users WHERE user_code = '$user_code'";
 
-  $result = mysqli_query($this->conn, $query);
+    $result = mysqli_query($this->conn, $query);
 
-  if ($result && mysqli_num_rows($result) === 1) {
-      $user = mysqli_fetch_assoc($result);
-      return $user;
-  } else {
-      return false;
-  }
-}
+    if ($result && mysqli_num_rows($result) === 1) {
+        $user = mysqli_fetch_assoc($result);
+        return $user;
+    } else {
+        return false;
+    }
+    }
 
-// Add this method to your User class
-public function updateUserPoints($user_code, $points) {
-  $user_code = mysqli_real_escape_string($this->conn, $user_code);
-  $points = mysqli_real_escape_string($this->conn, $points);
+    public function updateUserPoints($user_code, $points) {
+    $user_code = mysqli_real_escape_string($this->conn, $user_code);
+    $points = mysqli_real_escape_string($this->conn, $points);
 
-  $query = "UPDATE users SET points = $points WHERE user_code = '$user_code'";
+    $query = "UPDATE users SET points = $points WHERE user_code = '$user_code'";
 
-  $result = mysqli_query($this->conn, $query);
+    $result = mysqli_query($this->conn, $query);
 
-  return $result;
-}
+    return $result;
+    }
 }
   
 
-  function fetchGenres() {
+function fetchGenres() {
     global $conn;
   
     //armazena os generos recuperados da db
     $genres = array();
   
-    $query = "SELECT id_genres, genre_name, genre_photo FROM genres";
+    $query = "SELECT id_genres, genre_name, genre_photo FROM genres ORDER BY genre_name ASC";
   
     $result = mysqli_query($conn, $query);
   
@@ -187,8 +186,23 @@ public function updateUserPoints($user_code, $points) {
   
     mysqli_free_result($result);
     return $genres;
-  }
- 
+}
+
+
+function fetchGenreName($genre_id) {
+    global $conn;
+
+    $query = "SELECT genre_name FROM genres WHERE id_genres = '$genre_id'";
+
+    $result = mysqli_query($conn, $query);
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        return $row['genre_name'];
+    } else {
+        return "Unknown Genre";
+    }
+}
 
 
 //recebe um id de gênero como parâmetro e procura serviços associados
@@ -197,7 +211,7 @@ function fetchServicesByGenreId($genre_id) {
 
     $services = array();
 
-    $query = "SELECT id_services, service_name, service_photo FROM services WHERE genres_id_genres = '$genre_id'";
+    $query = "SELECT id_services, service_name, service_photo FROM services WHERE genres_id_genres = '$genre_id' ORDER BY service_name ASC";
 
     $result = mysqli_query($conn, $query);
 
@@ -228,6 +242,107 @@ function fetchServiceDetails($service_id) {
 
     return $service;
 }
+
+//parametro $limit que define quantos serviços sao retornados
+function fetchMostLikedServices($limit) {
+    global $conn;
+
+    //armazenar resultados
+    $services = array();
+
+    $query = "SELECT s.id_services, s.service_name, s.service_photo, s.genres_id_genres AS genre_id, g.genre_photo, COUNT(uhs.users_id_users) AS likes 
+              FROM services s
+              LEFT JOIN users_has_services uhs ON s.id_services = uhs.services_id_services
+              LEFT JOIN genres g ON s.genres_id_genres = g.id_genres
+              GROUP BY s.id_services
+              ORDER BY likes DESC
+              LIMIT $limit";
+
+    $result = mysqli_query($conn, $query);
+
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $services[] = $row;
+        }
+    }
+
+    return $services;
+}
+
+//adiciona novo serviço à bd
+function addService($id_genres, $service_name, $description, $price, $points_awarded) {
+    global $conn;
+    
+    $id_genres = mysqli_real_escape_string($conn, $id_genres);
+    $service_name = mysqli_real_escape_string($conn, $service_name);
+    $description = mysqli_real_escape_string($conn, $description);
+    $price = mysqli_real_escape_string($conn, $price);
+    $points_awarded = mysqli_real_escape_string($conn, $points_awarded);
+
+
+    $query = "INSERT INTO services (genres_id_genres, service_name, description, price, points_awarded)
+              VALUES ('$id_genres', '$service_name', '$description', '$price', '$points_awarded')";
+
+    $result = mysqli_query($conn, $query);
+
+    if ($result) {
+        return true;
+    } else {
+        error_log("Error in addService: " . mysqli_error($conn));
+        return false;
+    }
+}
+
+//editar um serviço
+function updateService($service_id, $new_service_name, $new_description, $new_price, $new_points_awarded) {
+    global $conn;
+
+    $service_id = mysqli_real_escape_string($conn, $service_id);
+    $new_service_name = mysqli_real_escape_string($conn, $new_service_name);
+    $new_description = mysqli_real_escape_string($conn, $new_description);
+    $new_price = mysqli_real_escape_string($conn, $new_price);
+    $new_points_awarded = mysqli_real_escape_string($conn, $new_points_awarded);
+
+    $query = "UPDATE services 
+              SET service_name = '$new_service_name', description = '$new_description', 
+                  price = '$new_price', points_awarded = '$new_points_awarded' 
+              WHERE id_services = '$service_id'";
+
+    $result = mysqli_query($conn, $query);
+
+    if ($result && mysqli_affected_rows($conn) === 1) {
+        return true;
+    } else {
+        error_log("Error in updateService: " . mysqli_error($conn));
+        return false;
+    }
+}
+
+//eliminar um serviço
+function deleteService($service_id) {
+    global $conn;
+
+    //excluir registros associados na tabela users_has_services
+    $query_delete_associated_records = "DELETE FROM users_has_services WHERE services_id_services = '$service_id'";
+    $result_delete_associated_records = mysqli_query($conn, $query_delete_associated_records);
+
+    if (!$result_delete_associated_records) {
+        error_log("Error deleting associated records from users_has_services table: " . mysqli_error($conn));
+        return false;
+    }
+
+    //eliminar serviço da tabela services
+    $query_delete_service = "DELETE FROM services WHERE id_services = '$service_id'";
+    $result_delete_service = mysqli_query($conn, $query_delete_service);
+
+    if ($result_delete_service) {
+        return true;
+    } else {
+        error_log("Error deleting service: " . mysqli_error($conn));
+        return false;
+    }
+}
+
 
 ?>
 
