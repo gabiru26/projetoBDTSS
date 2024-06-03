@@ -3,8 +3,8 @@
 include_once '../includes/config.php';
 include '../includes/db_api.php';
 
-
-$genres = fetchGenres(); // Call the function to get genres
+//recuperar a lista de generos da db e armazena-la
+$genres = fetchGenres(); 
 
 ?>
 
@@ -13,27 +13,27 @@ $genres = fetchGenres(); // Call the function to get genres
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Genres List</title>
+  <title>Lista de Generos</title>
 </head>
 <body>
 
-<h1>Genres</h1>
+<h1>Géneros</h1>
 
 <?php
 if (count($genres) > 0) {
-  // Loop through the fetched genres and display them
+  // loop usado para iterar sobre cada genero
   foreach ($genres as $genre) {
-    $genreId = $genre['id_genres']; // Assuming genre ID is stored in this key
+    $genreId = $genre['id_genres']; 
 
-    // Construct the image path using the genre ID
-    $imagePath = "../imgs/genres/genre_" . $genreId . ".jpg";  // Adjust extension if needed
+    // o caminho da imagem é construido uao user id genero
+    $imagePath = "../imgs/genres/genre_" . $genreId . ".jpg";  
+    $genreName = $genre['genre_name'];
 
-    // Display the image with the constructed path
-    echo "<h3>" . $genre['genre_name'] . "</h3>";
+    echo "<a href='cp_services.php?genre_id=$genreId'>$genreName</a><br>";
     echo "<img src='" . $imagePath . "' alt='" . $genre['genre_name'] . " Genre Photo'>";
   }
 } else {
-  echo "<p>No genres found.</p>";
+  echo "<p>Nenhum género encontrado.</p>";
 }
 ?>
 
